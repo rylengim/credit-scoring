@@ -1,0 +1,7 @@
+services:
+  credit-scoring-app:
+    build: .
+    container_name: credit-scoring-app
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
