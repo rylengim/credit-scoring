@@ -1,6 +1,6 @@
 # Credit Scoring App
 
-![Форма заявки](docs/form.png)
+![Форма заявки](misc/form.png)
 Сервис для оценки риска дефолта по заявке на кредитную карту.
 
 ## Стек
@@ -32,12 +32,3 @@ docker compose up --build
 - `model.pkl` — обученная модель
 - `data/scoring_features.csv` — подготовленные данные
 
-## Публикация на GitHub
-```bash
-git init
-git branch -M main
-git add .
-git commit -m "Initial commit: credit scoring app"
-git remote add origin git@github.com:rylengim/credit-scoring.git
-git push -u origin main
-```
