@@ -1,47 +1,21 @@
-# import streamlit as st
-# import requests
+from pathlib import Path
 
-# st.title("Кредитная карта Premium")
-# st.write("Новая кредитная карта с мгновенным одобрением")
-
-# with st.form("Подать заявку"):
-#     age = st.number_input("Ваш возраст", min_value=18)
-#     income = st.number_input("Ваш доход в тысячах рублей", min_value=0)
-#     education = st.checkbox("У меня есть высшее образование")
-#     work = st.checkbox("У меня есть стабильная работа")
-#     car = st.checkbox("У меня есть автомобиль")
-#     submit = st.form_submit_button('Подать заявку')
-
-# if submit:
-#     data = {
-#         "age": age,
-#         "income": income,
-#         "education": education,
-#         "work": work,
-#         "car": car,
-#     }
-#     response = requests.post("http://127.0.0.1:8000/score", json=data)
-#     if response.json()["approved"]:
-#         st.success("Поздравляем, ваша заявка одобрена!")
-#     else:
-#         st.success("Подобрали для Вас дебетовую карту с 3% кэшбеком.")
-
-
-# app.py
 import streamlit as st
 import joblib
-import numpy as np
+import pandas as pd
+
+from features import prepare_features
 
 
-st.set_page_config(page_title="Кредитная карта Premium", page_icon="💳")
+st.set_page_config(page_title="Кредитный скоринг — прототип", page_icon="💳")
 
-st.title("Кредитная карта Premium")
-st.write("Новая кредитная карта с мгновенным решением по заявке")
+st.title("Кредитный скоринг — прототип")
+st.write("Учебная демонстрация оценки риска на данных репозитория")
 
 
 @st.cache_resource
 def load_model():
-    return joblib.load("model.pkl")
+    return joblib.load(Path(__file__).resolve().with_name("model.pkl"))
 
 
 model = load_model()
@@ -66,46 +40,21 @@ with st.form("Подать заявку"):
 
 
 if submit:
-    education = int(education)
-    work = int(work)
-    car = int(car)
+    features = prepare_features(pd.DataFrame([{
+        "age": age, "income": income, "education": education,
+        "work": work, "car": car,
+    }]))
 
-    log_income = np.log1p(income)
-    age_sq = age ** 2
-    income_per_age = income / age if age != 0 else 0
-    employed_educated = work * education
+    default_proba = model.predict_proba(features.to_numpy())[0][1]
 
-    features = np.array([[
-        log_income,
-        age,
-        age_sq,
-        income_per_age,
-        employed_educated,
-        education,
-        work,
-        car
-    ]])
-
-    default_proba = model.predict_proba(features)[0][1]
-
-    st.subheader("Результат скоринга")
+    st.subheader("Демонстрационный результат")
     st.write(f"Вероятность дефолта: **{default_proba:.1%}**")
     st.write(f"Порог отказа: **{threshold:.0%}**")
 
     if default_proba >= threshold:
-        st.error("Высокий риск дефолта. В заявке отказано.")
-        st.info("Вместо этого можем предложить дебетовую карту с кэшбэком 3%.")
+        st.error("Оценка риска выше порога: условный отказ.")
     else:
-        st.success("Поздравляем, ваша заявка одобрена!")
+        st.success("Оценка риска ниже порога: условное одобрение.")
 
     with st.expander("Показать рассчитанные признаки"):
-        st.json({
-            "log_income": round(float(log_income), 3),
-            "age": int(age),
-            "age_sq": int(age_sq),
-            "income_per_age": round(float(income_per_age), 3),
-            "employed_educated": int(employed_educated),
-            "education": int(education),
-            "work": int(work),
-            "car": int(car),
-        })
+        st.json(features.iloc[0].round(3).to_dict())
